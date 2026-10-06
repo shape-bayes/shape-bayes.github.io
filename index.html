@@ -1,0 +1,1139 @@
+﻿<!doctype html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Shape-Bayes</title>
+  <meta name="description"
+    content="Shape-Bayes: Bayesian inference of structured shapes under visual ambiguity. Distilled aleatoric uncertainty, a Transformer-conditioned shape prior, and a closed-form Bayesian solver give structurally valid, calibrated face shapes under severe occlusion.">
+  <meta name="author" content="Mani Kumar Tellamekala, Tosh Brown, Michel Valstar">
+  <meta name="theme-color" content="#0E1013">
+  <link rel="canonical" href="https://shape-bayes.github.io/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Shape-Bayes: Bayesian Inference of Structured Shapes under Visual Ambiguity">
+  <meta property="og:description"
+    content="Trust visual evidence where it is reliable; rely on a learned shape prior where it is not. 100% in-distribution shapes under severe occlusion, with calibrated posteriors.">
+  <meta property="og:url" content="https://shape-bayes.github.io/">
+  <meta property="og:image" content="https://shape-bayes.github.io/assets/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="assets/css/site.css">
+  <script>
+    // Apply a saved theme before first paint (per-viewer convenience only).
+    try { var t = localStorage.getItem("sb-theme"); if (t === "light") document.documentElement.setAttribute("data-theme", "light"); } catch (e) { }
+  </script>
+  <script defer src="assets/vendor/katex/katex.min.js"></script>
+  <script defer src="assets/vendor/katex/auto-render.min.js"></script>
+  <script defer src="assets/js/site.js"></script>
+</head>
+
+<body>
+
+  <!-- ================= NAV ================= -->
+  <header class="nav wrap" id="nav">
+    <div class="nav-in">
+      <a class="mark" href="#top" aria-label="Shape-Bayes, back to top"><svg class="logo" viewBox="0 0 32 32"
+          aria-hidden="true">
+          <ellipse class="l-lik" cx="12.5" cy="16" rx="10.5" ry="4" transform="rotate(-55 12.5 16)" />
+          <ellipse class="l-pri" cx="19.5" cy="16" rx="10.5" ry="4" transform="rotate(55 19.5 16)" />
+          <ellipse class="l-post" cx="16" cy="12.7" rx="3.34" ry="4.33" />
+        </svg><span>Shape-<em>Bayes</em></span></a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#problem">Problem</a>
+        <a href="#idea">Idea</a>
+        <a href="#sampling">Sampling</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#calibration">Calibration</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#citation">Cite</a>
+      </nav>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch colour theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2" />
+          <path
+            d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ================= HERO ================= -->
+    <section class="hero wrap">
+      <div class="eyebrow">Preprint · 2026</div>
+      <h1>Shape-<em>Bayes</em></h1>
+      <p class="subtitle">Bayesian Inference of Structured Shapes under Visual Ambiguity</p>
+      <div>
+        <div class="authors">
+          <span><a href="https://mani-kt.github.io/" rel="author">Mani Kumar Tellamekala</a><sup>♣,1</sup></span>
+          <span>Tosh Brown<sup>2</sup></span>
+          <span>Michel Valstar<sup>2,3</sup></span>
+        </div>
+        <div class="affils">
+          <span><sup>1</sup>Amsterdam, The Netherlands</span>
+          <span><sup>2</sup>BlueSkeye AI</span>
+          <span><sup>3</sup>University of Nottingham, U.K.</span>
+        </div>
+        <p class="authorship"><sup>♣</sup>Independently conceived and developed by the first author during their tenure
+          at BlueSkeye AI.</p>
+      </div>
+      <div class="links">
+        <!-- TODO: replace XXXX.XXXXX with the arXiv identifier once it is assigned -->
+        <a class="btn primary" href="https://arxiv.org/abs/XXXX.XXXXX">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+            <path d="M14 3v5h5M9 13h6M9 17h4" />
+          </svg>
+          arXiv
+        </a>
+        <a class="btn" href="assets/shape-bayes.pdf">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+          </svg>
+          PDF
+        </a>
+        <!-- TODO: set href and remove aria-disabled when the code is public -->
+        <a class="btn" aria-disabled="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 7l-5 5 5 5M16 7l5 5-5 5" />
+          </svg>
+          Code <small>coming soon</small>
+        </a>
+        <a class="btn" href="#citation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M7 7h4v4H7zM13 7h4v4h-4zM7 11c0 3-1 5-3 6M13 11c0 3-1 5-3 6" />
+          </svg>
+          BibTeX
+        </a>
+      </div>
+    </section>
+
+
+
+    <div class="wrap">
+      <div class="thesis">
+        <blockquote>Trust visual evidence where it is <span class="c-lik">reliable</span>. Rely on the shape prior where
+          it is <span class="c-pri">ambiguous</span>.</blockquote>
+        <cite>The core intuition of Shape-Bayes</cite>
+      </div>
+    </div>
+
+    <!-- ================= LIVE POSTERIOR (hero figure) ================= -->
+    <div class="wrap">
+      <figure class="full live" id="live">
+        <div class="live-grid">
+          <div class="live-rowlabels" aria-hidden="true">
+            <span class="rl det"><i></i>SOTA Deterministic<br>Face Shape Regression</span>
+            <span class="rl sb"><i></i>Shape-Bayes<br>posterior</span>
+            <span class="rl"></span>
+          </div>
+          <div class="live-col">
+            <div class="live-tile det"><img src="assets/fig/live/vr_det.webp" width="720" height="720"
+                alt="VR headset: the deterministic prediction breaks where the face is hidden." loading="eager"></div>
+            <div class="live-tile sb"><video src="assets/fig/live/vr_sb.mp4" poster="assets/fig/live/vr_poster.webp"
+                width="720" height="720" autoplay muted loop playsinline preload="auto"
+                aria-label="VR headset: Shape-Bayes posterior shapes; only the hidden eyes and brows move."></video>
+            </div>
+            <div class="live-cap"><b></b>Eyes and brows hidden</div>
+          </div>
+          <div class="live-col">
+            <div class="live-tile det"><img src="assets/fig/live/popcorn_det.webp" width="720" height="720"
+                alt="Popcorn tub: the deterministic prediction breaks where the face is hidden." loading="eager"></div>
+            <div class="live-tile sb"><video src="assets/fig/live/popcorn_sb.mp4"
+                poster="assets/fig/live/popcorn_poster.webp" width="720" height="720" autoplay muted loop playsinline
+                preload="auto"
+                aria-label="Popcorn tub: Shape-Bayes posterior shapes; only the hidden mouth and jaw move."></video>
+            </div>
+            <div class="live-cap"><b></b>Mouth and chin hidden</div>
+          </div>
+          <div class="live-col">
+            <div class="live-tile det"><img src="assets/fig/live/burger_det.webp" width="720" height="720"
+                alt="Burger: the deterministic prediction breaks where the face is hidden." loading="eager"></div>
+            <div class="live-tile sb"><video src="assets/fig/live/burger_sb.mp4"
+                poster="assets/fig/live/burger_poster.webp" width="720" height="720" autoplay muted loop playsinline
+                preload="auto"
+                aria-label="Burger: Shape-Bayes posterior shapes; the hidden mouth opens and closes."></video></div>
+            <div class="live-cap"><b></b>Mouth and jaw hidden</div>
+          </div>
+        </div>
+        <figcaption><span class="fig-n">Fig. 1</span><b>Point estimate versus posterior under occlusion.</b> <span
+            class="c-gold">Gold</span>: the prediction of <abbr
+            title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>,
+          a state-of-the-art deterministic model, which distorts when the face is hidden. <span
+            class="c-post">Cyan</span>: the Shape-Bayes posterior — a distribution of plausible face shapes. The
+          animation sweeps through the model's uncertainty, showing that only the hidden landmarks move. Ellipses
+          indicate where the model is most uncertain. AI-generated faces.</figcaption>
+      </figure>
+    </div>
+
+
+
+    <!-- ================= ABSTRACT + STATS ================= -->
+    <div class="wrap">
+
+      <div class="abstract measure">
+        <h4>Abstract</h4>
+        <p>Perceiving structured shapes, such as human faces, from pixels is an inherently ambiguous task in real-world
+          conditions. Yet shape inference is largely posed as a deterministic regression task predicting fixed spatial
+          coordinates. We find that deterministic regression is brittle when visual evidence is ambiguous or incomplete:
+          under severe occlusions, deterministic models exhibit structural collapse, predicting incoherent shapes or
+          reverting to generic averages.</p>
+        <p>To address this, we introduce <strong>Shape-Bayes</strong>, a probabilistic framework that couples
+          uncertainty-aware visual perception with Bayesian shape reasoning. Rather than forcing point estimates,
+          Shape-Bayes dynamically weights visual evidence against geometric priors to infer a structurally valid shape
+          posterior. By guaranteeing complete structural integrity, Shape-Bayes achieves 100% In-Distribution Rate (IDR)
+          and establishes a new state of the art for robust 2D face shape regression under severe occlusion.</p>
+      </div>
+
+      <div class="stats full" aria-label="Key results">
+        <div class="stat">
+          <div class="v"><span class="to">100%</span></div>
+          <div class="k"><b>In-distribution rate</b> for all six base models on all three occluded benchmarks. <abbr
+              title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>
+            alone reaches 66.6% on 300W.</div>
+        </div>
+        <div class="stat">
+          <div class="v">7.56<span class="arrow">→</span><span class="to">1.97</span></div>
+          <div class="k"><b>Expected calibration error</b> of <abbr
+              title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>
+            on occluded 300W, after the Bayesian update.</div>
+        </div>
+        <div class="stat">
+          <div class="v"><span class="to">−21.2%</span></div>
+          <div class="k"><b>Relative error on occluded landmarks</b> for PiPNet on 300W, with failure rate down 13.7
+            points.</div>
+        </div>
+        <div class="stat">
+          <div class="v">9.03<span class="arrow">→</span><span class="to">6.60</span></div>
+          <div class="k"><b>minNME over 100 posterior samples</b> versus the deterministic prediction, on occluded
+            landmarks of occluded 300W (oracle selection).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= PROBLEM ================= -->
+    <section class="sec mt-l" id="problem">
+      <div class="wrap">
+        <div class="sec-head measure">
+          <div class="eyebrow">The problem</div>
+          <h2>Structural Collapse Under Severe Occlusion</h2>
+        </div>
+        <div class="measure prose">
+          <p>Deep regressors are highly accurate on unoccluded faces. But when a region has no meaningful visual
+            evidence, a model that must output one point per landmark still has to guess. It either draws a
+            topologically invalid shape or falls back to a generic average. Even <abbr
+              title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>,
+            the state-of-the-art deterministic face shape regressor (Yang &amp; Yeh, ICCV 2025), keeps only
+            <strong>66.6%</strong> of its 300W predictions inside the valid shape space once faces are occluded.
+          </p>
+          <p>Even when its guess is plausible, a deterministic model gives one answer where the image supports several,
+            and nothing tells the user that the answer was a guess.</p>
+          <p>Drag the dividers to compare the same images: the deterministic base model on the left, the Shape-Bayes
+            posterior with its uncertainty on the right.</p>
+        </div>
+        <div class="compare-grid full mt-m">
+          <figure class="compare" data-compare>
+            <img src="assets/fig/pairs/pair1_base.webp" width="1000" height="979"
+              alt="Deterministic landmarks on a face partly covered by a baseball glove; the mouth and nose contours are tangled."
+              loading="lazy">
+            <div class="top"><img src="assets/fig/pairs/pair1_sb.webp" width="1000" height="979"
+                alt="Shape-Bayes posterior on the same face: a coherent face shape with uncertainty halos around hidden landmarks."
+                loading="lazy"></div>
+            <span class="tag l"><i style="background:var(--base)"></i>Deterministic</span>
+            <span class="tag r"><i style="background:var(--post)"></i>Shape-Bayes</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Reveal Shape-Bayes result, glove example">
+            <span class="bar" aria-hidden="true"><span class="knob"><svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 6l-6 6 6 6M15 6l6 6-6 6" />
+                </svg></span></span>
+          </figure>
+          <figure class="compare" data-compare>
+            <img src="assets/fig/pairs/pair2_base.webp" width="1000" height="964"
+              alt="Deterministic landmarks on a face wearing a VR headset and partly covered by a hand; eyes and brows are distorted."
+              loading="lazy">
+            <div class="top"><img src="assets/fig/pairs/pair2_sb.webp" width="1000" height="964"
+                alt="Shape-Bayes posterior on the same face: plausible eyes, brows and jaw, with wide uncertainty under the headset."
+                loading="lazy"></div>
+            <span class="tag l"><i style="background:var(--base)"></i>Deterministic</span>
+            <span class="tag r"><i style="background:var(--post)"></i>Shape-Bayes</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Reveal Shape-Bayes result, VR headset example">
+            <span class="bar" aria-hidden="true"><span class="knob"><svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 6l-6 6 6 6M15 6l6 6-6 6" />
+                </svg></span></span>
+          </figure>
+          <figure class="compare" data-compare>
+            <img src="assets/fig/pairs/pair3_base.webp" width="1000" height="990"
+              alt="Deterministic landmarks on a face covered by a burger; the mouth contour is flattened and displaced."
+              loading="lazy">
+            <div class="top"><img src="assets/fig/pairs/pair3_sb.webp" width="1000" height="990"
+                alt="Shape-Bayes posterior on the same face: a natural mouth and jaw inferred behind the burger."
+                loading="lazy"></div>
+            <span class="tag l"><i style="background:var(--base)"></i>Deterministic</span>
+            <span class="tag r"><i style="background:var(--post)"></i>Shape-Bayes</span>
+            <input type="range" min="0" max="100" value="50" aria-label="Reveal Shape-Bayes result, burger example">
+            <span class="bar" aria-hidden="true"><span class="knob"><svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 6l-6 6 6 6M15 6l6 6-6 6" />
+                </svg></span></span>
+          </figure>
+        </div>
+        <p class="full table-note">Occluded 300W test images. Left of each divider: <abbr
+            title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>
+          (Yang &amp; Yeh, 2025). Right: the Shape-Bayes posterior mean with per-landmark uncertainty.</p>
+        <figure class="full mt-l">
+          <div class="plate"><img class="zoomable" src="assets/fig/abstract_figure.webp" width="2400" height="733"
+              alt="Left: a deterministic regressor's face landmarks collapse under a VR headset. Right: Shape-Bayes predicts uncertainties, infers a posterior mean with covariance, and samples several plausible shapes.">
+          </div>
+          <figcaption><span class="fig-n">Fig. 4</span><b>Robust Bayesian shape inference under severe occlusion.</b>
+            Deterministic regression collapses when forced to guess exact coordinates for hidden regions (left).
+            Shape-Bayes balances the noisy visual evidence against a structural prior, guided by the model's own
+            uncertainty. The result is a distribution of valid shapes, from which multiple plausible hypotheses can be
+            sampled (right).</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ================= IDEA ================= -->
+    <section class="sec tint" id="idea">
+      <div class="wrap">
+        <div class="sec-head measure">
+          <div class="eyebrow">The idea</div>
+          <h2>Adaptive Arbitration of Visual Evidence and Geometric Prior</h2>
+        </div>
+        <div class="measure prose">
+          <p>Human vision has long been described as Bayesian inference: incomplete, noisy bottom-up observations are
+            reconciled with robust top-down structural priors. Shape-Bayes makes this explicit for shape regression. A
+            base model reports not just <em>where</em> each landmark is, but <em>how sure</em> it is. We measure this
+            "aleatoric uncertainty" intuitively: if an image is rotated or blurred and the model's prediction scatters,
+            the model is uncertain. This distilled uncertainty acts as a spatial gate in a closed-form Bayesian update,
+            deciding how much each coordinate can move the shape.</p>
+        </div>
+        <figure class="wide mt-m">
+          <div class="plate"><img class="zoomable" src="assets/fig/intro_schematic.webp" width="1600" height="593"
+              alt="Schematic: an input image yields an observed shape S′ with uncertainty σ′. This defines a likelihood with precision W and, through a learned prior, a precision Λ. A closed-form Bayesian update combines them into the posterior P(S)."
+              loading="lazy"></div>
+          <figcaption><span class="fig-n">Fig. 5</span><b>Schematic overview.</b> Given an initial noisy shape estimate,
+            Shape-Bayes balances the image evidence (<span class="c-lik">W</span>) against a data-driven structural
+            prior (<span class="c-pri">Λ</span>) through a mathematical Bayesian update, outputting a complete
+            distribution of probable shapes <span class="c-post">P(S)</span>.</figcaption>
+        </figure>
+
+        <figure class="full arb" id="arbitration">
+          <div class="sweep-scroll">
+            <div class="arb-grid">
+              <div></div>
+              <div class="sh"><span class="sh-k"><i class="ln gold"></i>Deterministic regression</span><span
+                  class="badge">point estimate</span></div>
+              <div class="sh"><span class="sh-k"><i class="ln cyan"></i>Shape-Bayes posterior</span><span
+                  class="badge ok">mean + 2σ ellipses</span></div>
+              <div class="sh"><span class="sh-k">Relative evidence weight</span><span class="gate-legend"><span><i
+                      class="dot" style="background:var(--lik)"></i>visual evidence</span><span><i class="dot"
+                      style="background:var(--pri)"></i>shape prior</span></span></div>
+              <div class="arb-label"><b>Hand over mouth</b><span>21 of 68 landmarks with σ′ &gt; σ₀</span></div>
+              <div class="arb-panel"><img src="assets/fig/live/arb7_1.webp" width="600" height="600"
+                  alt="Hand over mouth: the deterministic shape under the hand." loading="lazy"></div>
+              <div class="arb-panel sb"><img src="assets/fig/live/arb7_2.webp" width="600" height="600"
+                  alt="Hand over mouth: the Shape-Bayes posterior with 2σ ellipses over the hidden mouth and jaw."
+                  loading="lazy"></div>
+              <div class="arb-panel"><img src="assets/fig/live/arb7_3.webp" width="600" height="600"
+                  alt="Hand over mouth: landmarks under the hand coloured olive, visible landmarks pink."
+                  loading="lazy"></div>
+              <div class="arb-label"><b>Hand over right eye</b><span>23 of 68 landmarks with σ′ &gt; σ₀</span></div>
+              <div class="arb-panel"><img src="assets/fig/live/arb8_1.webp" width="600" height="600"
+                  alt="Hand over right eye: the deterministic shape under the hand." loading="lazy"></div>
+              <div class="arb-panel sb"><img src="assets/fig/live/arb8_2.webp" width="600" height="600"
+                  alt="Hand over right eye: the Shape-Bayes posterior with 2σ ellipses over the hidden eye, brow and jaw side."
+                  loading="lazy"></div>
+              <div class="arb-panel"><img src="assets/fig/live/arb8_3.webp" width="600" height="600"
+                  alt="Hand over right eye: the hidden eye, brow and jaw side coloured olive, visible landmarks pink."
+                  loading="lazy"></div>
+              <div class="arb-label"><b>Hand over left eye</b><span>22 of 68 landmarks with σ′ &gt; σ₀</span></div>
+              <div class="arb-panel"><img src="assets/fig/live/arb9_1.webp" width="600" height="600"
+                  alt="Hand over left eye: the deterministic shape under the hand." loading="lazy"></div>
+              <div class="arb-panel sb"><img src="assets/fig/live/arb9_2.webp" width="600" height="600"
+                  alt="Hand over left eye: the Shape-Bayes posterior with 2σ ellipses over the hidden eye, brow and jaw side."
+                  loading="lazy"></div>
+              <div class="arb-panel"><img src="assets/fig/live/arb9_3.webp" width="600" height="600"
+                  alt="Hand over left eye: the hidden eye, brow and jaw side coloured olive, visible landmarks pink."
+                  loading="lazy"></div>
+            </div>
+          </div>
+          <figcaption><span class="fig-n">Fig. 2</span><b>Evidence and prior, weighted per landmark.</b> One subject
+            covers her mouth, her right eye and her left eye. All panels are model outputs from <abbr
+              title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>,
+            followed by the Shape-Bayes update. <b>Left:</b> the deterministic prediction — a single shape with no
+            uncertainty estimate. <b>Middle:</b> the Shape-Bayes posterior mean with uncertainty ellipses (covariance
+            scaled ×5 for visibility). <b>Right:</b> each landmark is coloured by how much its position is determined by
+            visual evidence (<span style="color:var(--lik)">pink</span>) versus the shape prior(<span
+              style="color:var(--pri)">olive</span>). Pink landmarks are mostly determined by what the camera sees;
+            olive landmarks, hidden under the hand, are mostly determined by what a face <em>should</em> look like.
+            AI-generated photographs.</figcaption>
+        </figure>
+
+        <div class="two r wide mt-l">
+          <div class="stack">
+            <h3>Posterior precision is a sum of information</h3>
+            <div class="prose">
+              <p>Shapes live on a PCA manifold, <span class="nowrap">\(\mathbf{S} = \bar{\mathbf{S}} +
+                  \mathbf{P}\mathbf{b}\)</span>. With a Gaussian likelihood and a Gaussian prior over the coefficients
+                <span class="nowrap">\(\mathbf{b}\)</span>, the posterior is exactly Gaussian. Its precision is the
+                information from the image plus the information from the prior.
+              </p>
+            </div>
+          </div>
+          <div class="equation" aria-label="Posterior precision and mean equations">
+            $$\tilde{\boldsymbol{\Sigma}}_b^{-1} \;=\;
+            \underbrace{\htmlClass{lik}{\mathbf{P}^{\top}\mathbf{W}\,\mathbf{P}}}_{\text{observation}} \;+\;
+            \underbrace{\htmlClass{pri}{\boldsymbol{\Lambda}_{\text{prior}}}}_{\text{prior}}$$
+            $$\htmlClass{post}{\mathbf{b}_{\mu}} \;=\;
+            \tilde{\boldsymbol{\Sigma}}_b\,\mathbf{P}^{\top}\htmlClass{lik}{\mathbf{W}}\,(\mathbf{s}' -
+            \bar{\mathbf{S}})$$
+            $$\htmlClass{lik}{\mathbf{W}} = \operatorname{diag}\!\Big(\frac{1}{\boldsymbol{\sigma}'^{2} +
+            \epsilon}\Big)$$
+            <div class="eq-legend">
+              <span><i class="sw" style="background:var(--lik)"></i>Evidence from the image</span>
+              <span><i class="sw" style="background:var(--pri)"></i>Learned shape prior</span>
+              <span><i class="sw" style="background:var(--post)"></i>Posterior</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="limits wide">
+          <div class="limit occ">
+            <h4>Where the face is hidden</h4>
+            <p>\(\sigma' \to \infty\), so \(\mathbf{W} \to 0\). The observation term contributes no information there,
+              and those landmarks are determined by the <span class="c-pri">prior</span> together with the visible
+              landmarks. The estimate remains on the PCA shape manifold by construction.</p>
+          </div>
+          <div class="limit clean">
+            <h4>Where the face is visible</h4>
+            <p>\(\sigma' \to 0\), so \(\mathbf{W}\) dominates. Shape-Bayes becomes almost an identity mapping, so
+              accuracy is kept: 300W NME goes from 2.86 to 2.81 on clean images.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SAMPLING ================= -->
+    <section class="sec" id="sampling">
+      <div class="wrap">
+        <div class="sec-head measure">
+          <div class="eyebrow">Posterior sampling</div>
+          <h2>Probabilistic Posterior Sampling</h2>
+        </div>
+        <div class="measure prose">
+          <p>When an occluder covers a facial region, the visual evidence is insufficient to resolve ambiguities (e.g.,
+            whether the mouth is open or closed). A deterministic regressor still outputs a single shape with no measure
+            of its reliability. In contrast, Shape-Bayes infers a closed-form Gaussian posterior over the PCA shape
+            coefficients. Its principal directions of variance align with the unobserved shape dimensions: moving along
+            the leading direction opens and closes the hidden mouth while the visible eyes stay fixed.</p>
+        </div>
+
+        <figure class="full mt-m">
+          <div class="hyp-rows">
+            <div class="hyp-row">
+              <div class="hyp">
+                <div class="hyp-img"><img src="assets/fig/live/burgerS_input.webp" width="720" height="720"
+                    alt="Input. Burger hides the mouth and jaw; the box marks the zoomed region." loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k">Input</span>Burger hides the mouth and jaw; the box marks the
+                  zoomed region.</div>
+              </div>
+              <div class="hyp">
+                <div class="hyp-img"><img src="assets/fig/live/burgerS_det.webp" width="720" height="720"
+                    alt="Deterministic prediction, zoomed: a tangled mouth behind the burger." loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k c-gold">Deterministic</span>Single estimate, distorted under the
+                  occluder</div>
+              </div>
+              <div class="hyp sbh">
+                <div class="hyp-img"><img src="assets/fig/live/burgerS_samples.webp" width="720" height="720"
+                    alt="Twelve Shape-Bayes posterior samples: they spread only where the face is hidden."
+                    loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k c-post">12 posterior samples</span>Variation concentrated in the
+                  occluded region</div>
+              </div>
+              <div class="hyp sbh">
+                <div class="hyp-img"><img src="assets/fig/live/burgerS_pair.webp" width="720" height="720"
+                    alt="Two Shape-Bayes hypotheses overlaid, cyan and white. Mouth closed versus mouth open."
+                    loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k c-post">Two hypotheses · <span class="sw-c">cyan</span> vs <span
+                      class="sw-w">white</span></span>Mouth closed vs open: inner-lip gap 1.0% vs 9.8% of the
+                  inter-ocular distance. The eyes move 0.1%.</div>
+              </div>
+            </div>
+            <div class="hyp-row">
+              <div class="hyp">
+                <div class="hyp-img"><img src="assets/fig/live/vrS_input.webp" width="720" height="720"
+                    alt="Input. Headset hides the eyes and brows; the box marks the zoomed region." loading="lazy">
+                </div>
+                <div class="hyp-cap"><span class="hyp-k">Input</span>Headset hides the eyes and brows; the box marks the
+                  zoomed region.</div>
+              </div>
+              <div class="hyp">
+                <div class="hyp-img"><img src="assets/fig/live/vrS_det.webp" width="720" height="720"
+                    alt="Deterministic prediction, zoomed: crossed, broken eyes and brows behind the headset."
+                    loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k c-gold">Deterministic</span>Single estimate, distorted under the
+                  occluder</div>
+              </div>
+              <div class="hyp sbh">
+                <div class="hyp-img"><img src="assets/fig/live/vrS_samples.webp" width="720" height="720"
+                    alt="Twelve Shape-Bayes posterior samples: they spread only where the face is hidden."
+                    loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k c-post">12 posterior samples</span>Variation concentrated in the
+                  occluded region</div>
+              </div>
+              <div class="hyp sbh">
+                <div class="hyp-img"><img src="assets/fig/live/vrS_pair.webp" width="720" height="720"
+                    alt="Two Shape-Bayes hypotheses overlaid, cyan and white. Brows and eyes in different positions."
+                    loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k c-post">Two hypotheses · <span class="sw-c">cyan</span> vs <span
+                      class="sw-w">white</span></span>Brows and eyes shift by 6.1% and 3.9% of the inter-ocular
+                  distance. The visible mouth moves 0.1%.</div>
+              </div>
+            </div>
+            <div class="hyp-row">
+              <div class="hyp">
+                <div class="hyp-img"><img src="assets/fig/live/popcornS_input.webp" width="720" height="720"
+                    alt="Input. The popcorn tub hides the mouth and chin; the box marks the zoomed region."
+                    loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k">Input</span>Tub hides the mouth and chin; the box marks the
+                  zoomed region.</div>
+              </div>
+              <div class="hyp">
+                <div class="hyp-img"><img src="assets/fig/live/popcornS_det.webp" width="720" height="720"
+                    alt="Deterministic prediction, zoomed: a tangled mouth behind the popcorn tub." loading="lazy">
+                </div>
+                <div class="hyp-cap"><span class="hyp-k c-gold">Deterministic</span>Single estimate, distorted under the
+                  occluder</div>
+              </div>
+              <div class="hyp sbh">
+                <div class="hyp-img"><img src="assets/fig/live/popcornS_samples.webp" width="720" height="720"
+                    alt="Twelve Shape-Bayes posterior samples: they spread only where the face is hidden."
+                    loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k c-post">12 posterior samples</span>Variation concentrated in the
+                  occluded region</div>
+              </div>
+              <div class="hyp sbh">
+                <div class="hyp-img"><img src="assets/fig/live/popcornS_pair.webp" width="720" height="720"
+                    alt="Two Shape-Bayes hypotheses overlaid: mouth open in cyan, mouth closed in white."
+                    loading="lazy"></div>
+                <div class="hyp-cap"><span class="hyp-k c-post">Two hypotheses · <span class="sw-c">cyan</span> vs <span
+                      class="sw-w">white</span></span>Mouth open vs closed: inner-lip gap 11.7% vs 2.5% of the
+                  inter-ocular distance. The eyes move 0.1%.</div>
+              </div>
+            </div>
+          </div>
+          <figcaption><span class="fig-n">Fig. 3</span><b>Posterior samples and structural hypotheses.</b> Each row is
+            zoomed to the occluded region (box on the input). Shape-Bayes infers a distribution of possible shapes. From
+            this, we can sample random plausible shapes, or we can extract the most prominent hypotheses—such as an open
+            mouth versus a closed mouth—by finding the directions of greatest uncertainty. AI-generated faces; <abbr
+              title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>
+            base predictions.</figcaption>
+        </figure>
+        <div class="two wide mt-l" style="align-items:center">
+          <div class="stack">
+            <h3>Posterior samples improve geometric accuracy</h3>
+            <div class="prose">
+              <p>On occluded 300W, the posterior sample closest to the ground truth among 100 has an error of 6.60,
+                against 9.03 for the deterministic prediction and 7.91 for the posterior mean. The minimum keeps
+                decreasing with the number of samples, to below 6 at 1,000 (Fig. 9). Because selection uses the ground
+                truth, this measures the quality of the hypothesis set, not of a deployable estimator. Realising the
+                gain requires an external signal that discriminates between hypotheses, such as later video frames, a
+                second view or a task-specific verifier.</p>
+            </div>
+          </div>
+          <div class="ladder" aria-label="Error on hidden landmarks, occluded 300W, HR-noSA base model">
+            <h4>Error on hidden landmarks (NME) ↓</h4>
+            <div class="rung"><span class="rl">Deterministic prediction</span><span class="rb"><i class="base"
+                  style="width:100%"></i></span><span class="rv">9.03</span></div>
+            <div class="rung"><span class="rl">Shape-Bayes posterior mean</span><span class="rb"><i
+                  style="width:87.6%"></i></span><span class="rv">7.91</span></div>
+            <div class="rung"><span class="rl">Best of 100 posterior samples</span><span class="rb"><i
+                  style="width:73.1%"></i></span><span class="rv">6.60</span></div>
+            <p class="table-note">Occluded 300W, <abbr
+                title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>
+              base model. Best-of-N picks the sample using the ground truth, so it measures how good the hypothesis set
+              is.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= METHOD ================= -->
+    <section class="sec tint" id="method">
+      <div class="wrap">
+        <div class="sec-head measure">
+          <div class="eyebrow">Method</div>
+          <h2>Three components, <em>one exact update</em></h2>
+        </div>
+        <figure class="full">
+          <div class="scroll-x">
+            <div class="plate"><img class="zoomable" src="assets/fig/method_diagram.webp" width="2400" height="688"
+                alt="Inference flow: an uncertainty-aware base regressor outputs landmarks and uncertainties; these define a likelihood precision W and, through a Transformer, a prior precision Λ in PCA space; a closed-form Bayesian update yields the posterior N(b_μ, Σ_b), from which shapes are sampled and projected."
+                loading="lazy"></div>
+          </div>
+          <figcaption><span class="fig-n">Fig. 6</span><b>Inference flow.</b> (1) A base regression model predicts
+            landmarks S′ and uncertainties σ′, defining the likelihood precision <span class="c-lik">W</span>. (2) A
+            Transformer maps these observations to an adaptive prior precision <span
+              class="c-pri">Λ<sub>prior</sub></span> in PCA space. (3) A closed-form Bayesian update computes the shape
+            posterior <span class="c-post">𝒩(b<sub>μ</sub>, Σ̃<sub>b</sub>)</span>; probable shapes are obtained by
+            sampling and projecting, S = S̄ + Pb.</figcaption>
+        </figure>
+
+        <div class="steps full mt-l">
+          <!-- Step 1 -->
+          <div class="step">
+            <div class="step-n">Step 1</div>
+            <div class="step-body">
+              <div class="two l">
+                <figure class="tall-fig">
+                  <div class="plate"><img class="zoomable" src="assets/fig/distilled_uncert.webp" width="1100"
+                      height="1495"
+                      alt="Distillation pipeline: a masked face is rotated from −45° to 45°, a frozen teacher predicts landmarks for each view, predictions are inverse-transformed back, and their spread gives per-landmark uncertainty, large around the mask."
+                      loading="lazy"></div>
+                  <figcaption><span class="fig-n">Fig. 7</span><b>Distilled uncertainty supervision.</b> Teacher
+                    predictions on affine-augmented views are mapped back to the original frame; their spread is the
+                    aleatoric target.</figcaption>
+                </figure>
+                <div class="stack">
+                  <h3>Uncertainty from visual feature stability</h3>
+                  <div class="prose">
+                    <p>A visible, salient region has robust local features: its predicted coordinates barely move when
+                      the image is rotated, scaled or blurred. An occluded region has no discriminative evidence, so the
+                      model extrapolates from weak global context, and those guesses scatter under the same
+                      transformations.</p>
+                    <p>Shape-Bayes turns this into supervision without manual labels. A frozen teacher predicts shapes
+                      for <em>M</em> augmented views. The predictions are warped back with the inverse transforms, and
+                      their root-mean-square deviation from the unaugmented prediction becomes the target uncertainty:
+                    </p>
+                  </div>
+                  <div class="equation">$$\boldsymbol{\sigma}'_{\text{target}} =
+                    \Big(\tfrac{1}{M}\textstyle\sum_{i=1}^{M} \big(\mathbf{S}_i -
+                    \mathbf{S}'_{\text{target}}\big)^2\Big)^{1/2}$$</div>
+                  <div class="prose">
+                    <p>The base model learns to output coordinates and uncertainties together, so at inference it needs
+                      <strong>a single forward pass</strong>. The scheme works with any architecture: heatmap,
+                      coordinate or Transformer regressors. Models that already predict uncertainty, such as LUVLi, need
+                      no distillation at all.
+                    </p>
+                  </div>
+                  <div class="spec"><span>M = 30 views</span><span>rotation ±35°</span><span>scale
+                      1.1–1.4</span><span>blur · flips</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Step 2 -->
+          <div class="step">
+            <div class="step-n">Step 2</div>
+            <div class="step-body">
+              <h3>Input-conditioned structural prior</h3>
+              <div class="two">
+                <div class="prose">
+                  <p>A static PCA prior is often insufficient for large deformations such as head pose. Shape-Bayes
+                    employs a lightweight Transformer encoder conditioned on the observations: each of the <em>N</em>
+                    landmarks acts as a token, \(\mathbf{X} = [\mathbf{S}', \boldsymbol{\sigma}'] \in
+                    \mathbb{R}^{N\times 4}\).</p>
+                  <p>Through self-attention, high-confidence visible regions inform the structural placement of occluded
+                    landmarks. The encoder outputs the diagonal of the <span class="c-pri">prior precision</span> matrix
+                    over the latent shape coefficients:</p>
+                </div>
+                <div class="stack">
+                  <div class="equation">$$\htmlClass{pri}{\boldsymbol{\Lambda}_{\text{prior}}} =
+                    \operatorname{diag}\big(\exp(E_{\phi}(\mathbf{X}))\big) \in \mathbb{R}^{K\times K}$$
+                    <p class="eq-note">Prior \(\mathcal{N}(\mathbf{0},\, \boldsymbol{\Lambda}_{\text{prior}}^{-1})\)
+                      over \(\mathbf{b}\). The exponential keeps it strictly positive.</p>
+                  </div>
+                  <div class="spec"><span>5 encoder layers</span><span>d = 64</span><span>8 heads</span><span>429K
+                      parameters</span><span>PCA rank K captures &gt;99% variance</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step">
+            <div class="step-n">Step 3</div>
+            <div class="step-body">
+              <h3>Differentiable closed-form Bayesian solver</h3>
+              <div class="two">
+                <div class="prose">
+                  <p>The product of the likelihood and prior yields an exact Gaussian posterior over shape coefficients.
+                    Because the PCA manifold is low-dimensional, inverting the <em>K</em>×<em>K</em> precision matrix is
+                    computationally trivial and fully differentiable, enabling end-to-end training.</p>
+                  <p>The posterior mean serves as the nominal shape prediction, while samples drawn from the posterior
+                    represent plausible alternative hypotheses. By construction, every sample lies on the valid PCA
+                    shape manifold.</p>
+                </div>
+                <div class="equation">
+                  $$p(\mathbf{b}\mid\mathbf{s}',\mathbf{X}) = \mathcal{N}\big(\htmlClass{post}{\mathbf{b}_{\mu}},\,
+                  \htmlClass{post}{\tilde{\boldsymbol{\Sigma}}_b}\big)$$
+                  $$\mathbf{b} \sim \mathcal{N}\big(\mathbf{b}_{\mu}, \tilde{\boldsymbol{\Sigma}}_b\big) \;\Rightarrow\;
+                  \mathbf{S} = \bar{\mathbf{S}} + \mathbf{P}\mathbf{b}$$
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training -->
+          <div class="step">
+            <div class="step-n">Training</div>
+            <div class="step-body">
+              <h3>Decoupling spatial prediction and uncertainty</h3>
+              <div class="two">
+                <div class="prose">
+                  <p>During training, the base model is frozen and the PCA basis is precomputed; only the prior
+                    Transformer is optimized using occlusion-augmented shapes. An MSE objective on the posterior mean
+                    anchors the spatial coordinates, while a negative log-likelihood (NLL) objective calibrates the
+                    posterior.</p>
+                  <p class="callout">A stop-gradient applied to the mean within the NLL term decouples these objectives:
+                    <b>MSE governs spatial localization</b>, while <b>NLL governs uncertainty estimation</b>. This
+                    prevents the model from artificially reducing the NLL loss by shifting the mean rather than properly
+                    calibrating its variance.
+                  </p>
+                </div>
+                <div class="equation">
+                  $$\mathcal{L} = \lambda_{\text{MSE}}\,\lVert \mathbf{b}_{\mu} - \mathbf{b}_{\text{gt}} \rVert^2 +
+                  \lambda_{\text{NLL}}\,\mathcal{L}_{\text{NLL}}$$
+                  $$\begin{aligned}\mathcal{L}_{\text{NLL}} = {}& \tfrac{1}{2}(\mathbf{b}_{\text{gt}} -
+                  \bar{\mathbf{b}}_{\mu})^{\top}\tilde{\boldsymbol{\Sigma}}_b^{-1}(\mathbf{b}_{\text{gt}} -
+                  \bar{\mathbf{b}}_{\mu}) \\ & - \tfrac{1}{2}\log\det\tilde{\boldsymbol{\Sigma}}_b^{-1}\end{aligned}$$
+                  <p class="eq-note">\(\bar{\mathbf{b}}_{\mu} = \operatorname{sg}[\mathbf{b}_{\mu}]\) is a stop-gradient
+                    on the mean.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <figure class="full mt-l">
+          <div class="scroll-x">
+            <div class="plate"><img class="zoomable" src="assets/fig/bayes_shape_flow_qual.webp" width="2400"
+                height="486"
+                alt="One masked face through the pipeline: input image, base model shape prediction with errors, its uncertainty, the Bayesian posterior, two posterior samples with open and closed mouth, and an ensemble of five samples."
+                loading="lazy"></div>
+          </div>
+          <figcaption><span class="fig-n">Fig. 8</span><b>One image through the pipeline.</b> Input, base model
+            prediction and its aleatoric uncertainty, Bayesian posterior mean, and shapes sampled from the posterior.
+            Under the mask, the posterior keeps both an open-mouth and a closed-mouth hypothesis, which the image cannot
+            decide between.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ================= RESULTS ================= -->
+    <section class="sec" id="results">
+      <div class="wrap">
+        <div class="sec-head measure">
+          <div class="eyebrow">Results</div>
+          <h2>Structural Validity and Occlusion Robustness</h2>
+        </div>
+        <div class="measure prose">
+          <p>Shape-Bayes is evaluated on the 300W, WFLW and COFW test sets under a dynamic occlusion protocol: synthetic
+            wearable masks and a library of more than 80 real-world objects overlaid on the images, without changing the
+            ground-truth shapes. It is attached to six state-of-the-art base models spanning heatmap, coordinate and
+            Transformer paradigms.</p>
+        </div>
+
+        <div class="full mt-m stack" id="xarch">
+          <div class="toolbar">
+            <div class="tabs" role="tablist" aria-label="Benchmark">
+              <button role="tab" aria-selected="true" data-ds="300W">300W</button>
+              <button role="tab" aria-selected="false" data-ds="WFLW">WFLW</button>
+              <button role="tab" aria-selected="false" data-ds="COFW">COFW</button>
+            </div>
+            <div class="legend"><span><i class="dot base"></i>Base model</span><span><i class="dot sb"></i>+
+                Shape-Bayes</span></div>
+          </div>
+          <div class="charts">
+            <div class="chart-card">
+              <h4>In-distribution rate (IDR) ↑</h4>
+              <p class="sub">% of predicted shapes inside the 95% hyperellipsoid of the shape manifold</p>
+              <svg class="chart" id="chart-idr" role="img"
+                aria-label="In-distribution rate per base model, before and after Shape-Bayes"></svg>
+            </div>
+            <div class="chart-card">
+              <h4>Error on occluded landmarks (NME<sub>occ</sub>) ↓</h4>
+              <p class="sub">Normalized mean error, % of inter-ocular distance</p>
+              <svg class="chart" id="chart-occ" role="img"
+                aria-label="Occluded-landmark error per base model, before and after Shape-Bayes"></svg>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data" id="table-xarch">
+              <thead>
+                <tr>
+                  <th>Base model</th>
+                  <th>IDR ↑</th>
+                  <th>NME<sub>occ</sub> ↓</th>
+                  <th>NME<sub>all</sub> ↓</th>
+                  <th>minNME<sub>@100</sub> ↓</th>
+                  <th>FR<sub>10</sub> ↓</th>
+                  <th>AUC<sub>10</sub> ↑</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="table-note">Each cell shows base → +Shape-Bayes, with the relative change for error metrics. <span
+              class="nowrap">NATIVE</span> marks models that already output uncertainty and need no distillation. A dash
+            means the model was not evaluated on that benchmark. minNME<sub>@100</sub> takes the posterior sample
+            closest to the ground truth out of 100, so it measures the quality of the hypothesis set rather than of a
+            single prediction.</p>
+        </div>
+
+        <div class="two wide mt-l">
+          <div class="stack">
+            <h3>Preserving structural integrity without over-smoothing</h3>
+            <div class="prose">
+              <p>Prior-driven shape regularization typically trades accuracy on visible landmarks for global structural
+                validity. Shape-Bayes avoids this trade-off. High-confidence visible landmarks strongly anchor the
+                latent shape, while uncertain landmarks are down-weighted and inferred via the structural prior.</p>
+              <p>These gains are not traded between regions: on occluded 300W, error decreases across all facial parts.
+              </p>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h4>Part-wise NME<sub>occ</sub> on occluded 300W ↓</h4>
+            <p class="sub">Base model: <abbr
+                title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>
+            </p>
+            <svg class="chart" id="chart-parts" role="img"
+              aria-label="Occluded-landmark error by facial region, before and after Shape-Bayes"></svg>
+          </div>
+        </div>
+
+        <div class="two wide mt-l">
+          <div class="stack">
+            <h3>Performance on unoccluded test sets</h3>
+            <div class="prose">
+              <p>In the absence of occlusion, predicted uncertainties approach zero, causing the observation precision
+                to dominate the prior. Shape-Bayes naturally reduces to an identity mapping, preserving or slightly
+                improving baseline accuracy. Sampling 100 shapes from the posterior and selecting the oracle minimum
+                yields the lowest error across all three benchmarks, confirming that the posterior assigns high
+                probability mass to accurate geometric hypotheses.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>300W</th>
+                  <th>WFLW</th>
+                  <th>COFW</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>AWing</td>
+                  <td>3.07</td>
+                  <td>4.36</td>
+                  <td>4.94</td>
+                </tr>
+                <tr>
+                  <td>LUVLi</td>
+                  <td>3.23</td>
+                  <td>4.37</td>
+                  <td class="na">–</td>
+                </tr>
+                <tr>
+                  <td>ViTPose</td>
+                  <td>3.02</td>
+                  <td>4.26</td>
+                  <td>4.85</td>
+                </tr>
+                <tr>
+                  <td>ADNet</td>
+                  <td>2.93</td>
+                  <td>4.14</td>
+                  <td>4.68</td>
+                </tr>
+                <tr>
+                  <td>HIH</td>
+                  <td>3.09</td>
+                  <td>4.08</td>
+                  <td>4.63</td>
+                </tr>
+                <tr>
+                  <td>SLPT</td>
+                  <td>3.17</td>
+                  <td>4.14</td>
+                  <td>4.79</td>
+                </tr>
+                <tr>
+                  <td>STAR</td>
+                  <td>2.90</td>
+                  <td>4.03</td>
+                  <td>4.62</td>
+                </tr>
+                <tr>
+                  <td>OccFace</td>
+                  <td>2.83</td>
+                  <td class="best">3.77</td>
+                  <td>4.53</td>
+                </tr>
+                <tr class="sep">
+                  <td><abbr
+                      title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>
+                  </td>
+                  <td>2.86</td>
+                  <td>3.97</td>
+                  <td>4.53</td>
+                </tr>
+                <tr class="ours">
+                  <td>+ Shape-Bayes (mean)</td>
+                  <td class="best">2.81</td>
+                  <td>3.94</td>
+                  <td class="best">4.50</td>
+                </tr>
+                <tr class="ours">
+                  <td>+ Shape-Bayes (minNME<sub>@100</sub>)</td>
+                  <td>2.79</td>
+                  <td>3.72</td>
+                  <td>4.23</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="wide table-note">NME<sub>all</sub> ↓ on the original test sets. Bold marks the best single prediction
+          per benchmark. The minNME row selects among samples using the ground truth and is reported separately.</p>
+
+        <div class="wide mt-l stack">
+          <h3>Ablation study</h3>
+          <div class="table-wrap">
+            <table class="data ablation">
+              <thead>
+                <tr>
+                  <th>Configuration</th>
+                  <th>NME ↓</th>
+                  <th>minNME<sub>@100</sub> ↓</th>
+                  <th>FR ↓</th>
+                  <th>AUC ↑</th>
+                </tr>
+              </thead>
+              <tbody id="ablation-body"></tbody>
+            </table>
+          </div>
+          <div class="two r" style="align-items:center">
+            <div class="prose">
+              <p>Unweighted least-squares PCA projection yields minimal improvement, as corrupted landmarks act as
+                outliers that distort confident predictions. Weighting the projection by the distilled inverse
+                variance—equivalent to Mahalanobis distance minimization—provides the majority of the performance gain.
+                The adaptive prior accounts for the remaining improvement by accommodating input-specific variations
+                such as head pose.</p>
+              <p>Because the output is a full probability distribution, drawing additional samples increasingly yields
+                more accurate geometric hypotheses, significantly outperforming the deterministic baseline.</p>
+            </div>
+            <figure>
+              <div class="plate"><img class="zoomable" src="assets/fig/minNME_Ablation.webp" width="1400" height="883"
+                  alt="minNME as a function of the number of posterior samples, from about 8 at 5 samples to about 5.9 at 1000, below the deterministic baseline of 9 for all three variants; Shape-Bayes is lowest throughout."
+                  loading="lazy"></div>
+              <figcaption><span class="fig-n">Fig. 9</span><b>minNME<sub>@N</sub></b> on occluded 300W versus the number
+                of posterior samples <em>N</em>.</figcaption>
+            </figure>
+          </div>
+          <p class="table-note">Occluded 300W, <abbr
+              title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>
+            base model, metrics on occluded landmarks.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CALIBRATION ================= -->
+    <section class="sec tint" id="calibration">
+      <div class="wrap">
+        <div class="sec-head measure">
+          <div class="eyebrow">Calibration</div>
+          <h2>Posterior <em>calibration</em></h2>
+        </div>
+        <div class="measure prose">
+          <p>Under out-of-distribution occlusion, baseline models are typically overconfident, predicting uncertainties
+            that underestimate the true error. Propagating aleatoric uncertainty through the prior-constrained Bayesian
+            update appropriately increases the posterior variance where visual evidence is degraded, consistently
+            lowering the expected calibration error (ECE) across all evaluated architectures.</p>
+        </div>
+
+        <figure class="full mt-m">
+          <div class="scroll-x">
+            <div class="plate"><img class="zoomable" src="assets/fig/300w_uncert_calibration.webp" width="2400"
+                height="617"
+                alt="Three calibration plots on occluded 300W: (a) predicted uncertainty versus observed error with Spearman correlation 0.67; (b) reliability diagram close to the diagonal, ECE 1.966; (c) sparsification curve tracking the oracle."
+                loading="lazy"></div>
+          </div>
+          <figcaption><span class="fig-n">Fig. 10</span><b>Posterior calibration on occluded 300W.</b> (a) Predicted
+            uncertainty correlates with observed error (Spearman ρ = 0.67). (b) The reliability diagram stays close to
+            perfect calibration (ECE = 1.97). (c) Rejecting the most uncertain predictions isolates accurate shapes, and
+            the sparsification curve tracks the oracle.</figcaption>
+        </figure>
+        <div class="two wide mt-l">
+          <div class="chart-card">
+            <h4>Expected calibration error (ECE) ↓</h4>
+            <p class="sub">Occluded 300W. *LUVLi uses its own native uncertainty.</p>
+            <svg class="chart" id="chart-ece" role="img"
+              aria-label="Expected calibration error per base model, before and after Shape-Bayes"></svg>
+          </div>
+          <div class="table-wrap" style="align-self:start">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Base model</th>
+                  <th>NLL ↓</th>
+                  <th>ECE ↓</th>
+                </tr>
+              </thead>
+              <tbody id="calib-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= GALLERY ================= -->
+    <section class="sec" id="gallery">
+      <div class="wrap">
+        <div class="sec-head measure">
+          <div class="eyebrow">Qualitative results</div>
+          <h2>Qualitative results across benchmarks</h2>
+        </div>
+        <div class="full stack">
+          <div class="toolbar">
+            <div class="tabs" role="tablist" aria-label="Gallery benchmark">
+              <button role="tab" aria-selected="true" aria-controls="g-300w" data-g="g-300w">300W</button>
+              <button role="tab" aria-selected="false" aria-controls="g-cofw" data-g="g-cofw">COFW</button>
+              <button role="tab" aria-selected="false" aria-controls="g-wflw" data-g="g-wflw">WFLW</button>
+            </div>
+            <p class="table-note" style="margin:0">Columns: input · base prediction · base uncertainty · posterior · two
+              samples · 5-sample ensemble. Select to enlarge.</p>
+          </div>
+          <figure class="gallery-panel" id="g-300w" role="tabpanel">
+            <div class="plate"><img class="zoomable" src="assets/fig/300W_QUAL_RESULTS.webp" width="2000" height="2029"
+                alt="Grid of seven occluded 300W faces (popcorn, pizza, burger, fan, ball, glove) through the pipeline from base prediction to posterior samples."
+                loading="lazy"></div>
+          </figure>
+          <figure class="gallery-panel" id="g-cofw" role="tabpanel" hidden>
+            <div class="plate"><img class="zoomable" src="assets/fig/COFW_QUAL_RESULTS.webp" width="2000" height="3183"
+                alt="Grid of occluded COFW faces through the pipeline from base prediction to posterior samples."
+                loading="lazy"></div>
+          </figure>
+          <figure class="gallery-panel" id="g-wflw" role="tabpanel" hidden>
+            <div class="plate"><img class="zoomable" src="assets/fig/WFLW_QUAL_RESULTS.webp" width="2000" height="2885"
+                alt="Grid of occluded WFLW faces through the pipeline from base prediction to posterior samples."
+                loading="lazy"></div>
+          </figure>
+          <p class="table-note"><abbr
+              title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>
+            (Yang &amp; Yeh, 2025) base model versus Shape-Bayes on dynamically occluded test images.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= EFFICIENCY + SCOPE ================= -->
+    <section class="sec tint" id="efficiency">
+      <div class="wrap">
+        <div class="two wide">
+          <div class="stack">
+            <div class="eyebrow">Cost</div>
+            <h3>Computational cost</h3>
+            <div class="prose">
+              <p>As the base network remains frozen, Shape-Bayes introduces only a lightweight Transformer and a
+                <em>K</em>×<em>K</em> matrix inversion. Consequently, the backbone continues to dominate total inference
+                time.
+              </p>
+            </div>
+            <div class="facts">
+              <div class="fact">
+                <div class="v">429K</div>
+                <div class="k">parameters, 3.2% of the base network</div>
+              </div>
+              <div class="fact">
+                <div class="v">0.10%</div>
+                <div class="k">of base FLOPs (~30 MFLOPs vs 29.1 GFLOPs)</div>
+              </div>
+              <div class="fact">
+                <div class="v">&lt;0.5 ms</div>
+                <div class="k">per image on an RTX 3090</div>
+              </div>
+              <div class="fact">
+                <div class="v">&lt;2 MB</div>
+                <div class="k">inference memory, weights included</div>
+              </div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="eyebrow">Scope</div>
+            <h3>Generalization to other topologies</h3>
+            <div class="prose">
+              <p>While evaluated on human faces—characterized by extreme rigid and non-rigid deformations, strict
+                anatomical constraints, and abundant occlusion—the proposed Bayesian solver is topology-agnostic. It
+                requires only a set of landmarks, their associated uncertainties, and a shape basis.</p>
+              <p>The framework naturally extends to other structured shape inference tasks under ambiguity, such as body
+                and hand pose estimation, medical anatomical landmarking, and lane geometry extraction.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CITATION ================= -->
+    <section class="sec" id="citation">
+      <div class="wrap">
+        <div class="wide stack">
+          <div class="sec-head" style="margin-bottom:6px">
+            <div class="eyebrow">Citation</div>
+            <h2>BibTeX</h2>
+          </div>
+          <div class="bib">
+            <button type="button" id="copy-bib">Copy</button>
+            <pre id="bibtex">@article{tellamekala2026shapebayes,
+  title   = {Shape-Bayes: Bayesian Inference of Structured Shapes
+             under Visual Ambiguity},
+  author  = {Tellamekala, Mani Kumar and Brown, Tosh and Valstar, Michel},
+  journal = {arXiv preprint arXiv:XXXX.XXXXX},
+  year    = {2026}
+}</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="wrap">
+    <div class="full">
+      <p>Figures 1–2 use AI-generated faces. Other face images come from the 300W, COFW and WFLW research benchmarks and
+        appear only to illustrate research results. If you appear in one and would like it removed, write to <span
+          class="nowrap">mani.kumar.t@outlook.com</span>.</p>
+      <p>Contact: <span class="nowrap">mani.kumar.t@outlook.com</span> · </p>
+    </div>
+  </footer>
+
+  <dialog class="lightbox" id="lightbox" aria-label="Enlarged figure">
+    <button class="icon-btn close" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
+    <img alt="">
+  </dialog>
+
+</body>
+
+</html>
