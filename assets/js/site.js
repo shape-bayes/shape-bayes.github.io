@@ -252,11 +252,17 @@
 
   /* ---------------- hero videos ---------------- */
   function initVideos() {
-    const vids = $$("video");
+    const vids = $$("video[autoplay]");
+    if (!vids.length) return;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) { vids.forEach(v => { v.removeAttribute("autoplay"); v.pause(); }); return; }
-    // Play only while visible, to save battery and CPU.
-    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.play().catch(() => {}); else e.target.pause(); }), { threshold: 0.15 });
-    vids.forEach(v => io.observe(v));
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) e.target.play().catch(() => {});
+      else e.target.pause();
+    }), { threshold: 0.25 });
+    vids.forEach(v => { io.observe(v); v.play().catch(() => {}); });
+    const tryPlay = () => vids.forEach(v => { if (v.paused) v.play().catch(() => {}); });
+    document.addEventListener("click", tryPlay, { once: true });
+    document.addEventListener("scroll", tryPlay, { passive: true, once: true });
   }
 
   function initResize() {
