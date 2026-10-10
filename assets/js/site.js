@@ -259,8 +259,16 @@
       if (e.isIntersecting) e.target.play().catch(() => {});
       else e.target.pause();
     }), { threshold: 0.25 });
-    vids.forEach(v => { io.observe(v); v.play().catch(() => {}); });
-    const tryPlay = () => vids.forEach(v => { if (v.paused) v.play().catch(() => {}); });
+    vids.forEach(v => {
+      io.observe(v);
+      v.playbackRate = 1.5;
+      v.play().catch(() => {});
+    });
+    const tryPlay = () => {
+      vids.forEach(v => { if (v.paused) v.play().catch(() => {}); });
+      document.removeEventListener("click", tryPlay);
+      document.removeEventListener("scroll", tryPlay);
+    };
     document.addEventListener("click", tryPlay, { once: true });
     document.addEventListener("scroll", tryPlay, { passive: true, once: true });
   }
