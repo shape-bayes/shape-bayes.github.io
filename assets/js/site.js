@@ -268,8 +268,84 @@
     charts.forEach((_, svg) => ro.observe(svg));
   }
 
+  /* ---------------- scroll-triggered fade-in ---------------- */
+  function initFadeIn() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const els = $$(".sec, .abstract, .stats, figure.hero-fig");
+    els.forEach(el => el.classList.add("fade-in"));
+    const io = new IntersectionObserver(entries => entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add("visible"); io.unobserve(e.target); }
+    }), { threshold: 0.08 });
+    els.forEach(el => io.observe(el));
+  }
+
+  /* ---------------- animated count-up for stats ---------------- */
+  function initCountUp() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const stats = $$(".stat .v .to");
+    const io = new IntersectionObserver(entries => entries.forEach(e => {
+      if (!e.isIntersecting || e.target._counted) return;
+      e.target._counted = true;
+      const raw = e.target.textContent.trim();
+      // Parse the numeric value and any suffix (%, etc.)
+      const m = raw.match(/^([−\-]?)(\d+(?:\.\d+)?)(.*)/);
+      if (!m) return;
+      const sign = m[1] === "−" || m[1] === "-" ? -1 : 1;
+      const target = parseFloat(m[2]);
+      const suffix = m[3]; // e.g. "%" or ""
+      const hasDecimal = m[2].includes(".");
+      const decimals = hasDecimal ? m[2].split(".")[1].length : 0;
+      const duration = 1200;
+      const start = performance.now();
+      const step = now => {
+        const t = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+        const val = target * ease;
+        const formatted = hasDecimal ? val.toFixed(decimals) : Math.round(val);
+        e.target.textContent = (sign < 0 ? "−" : "") + formatted + suffix;
+        if (t < 1) requestAnimationFrame(step);
+      };
+      e.target.textContent = (sign < 0 ? "−" : "") + (hasDecimal ? (0).toFixed(decimals) : "0") + suffix;
+      requestAnimationFrame(step);
+    }), { threshold: 0.5 });
+    stats.forEach(el => io.observe(el));
+  }
+
+  /* ---------------- scroll-to-top button ---------------- */
+  function initScrollTop() {
+    const btn = $("#scroll-top");
+    if (!btn) return;
+    const toggle = () => btn.classList.toggle("show", window.scrollY > 600);
+    toggle();
+    window.addEventListener("scroll", toggle, { passive: true });
+    btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }
+
+  /* ---------------- sidebar TOC active-tracking ---------------- */
+  function initSidebarToc() {
+    const toc = $("#sidebar-toc");
+    if (!toc) return;
+    const links = $$("a", toc);
+    const ids = links.map(a => a.getAttribute("href").slice(1));
+    const sections = ids.map(id => document.getElementById(id)).filter(Boolean);
+    if (!sections.length) return;
+
+
+    // Track active section
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          links.forEach(a => a.classList.remove("active"));
+          const match = links.find(a => a.getAttribute("href") === "#" + e.target.id);
+          if (match) match.classList.add("active");
+        }
+      });
+    }, { rootMargin: "-20% 0px -60% 0px" });
+    sections.forEach(s => io.observe(s));
+  }
+
   function init() {
-    renderMath(); initTheme(); initNav(); initCompare(); initXarch(); initStatic(); initGallery(); initLightbox(); initCopy(); initVideos(); initResize();
+    renderMath(); initTheme(); initNav(); initCompare(); initXarch(); initStatic(); initGallery(); initLightbox(); initCopy(); initVideos(); initResize(); initFadeIn(); initCountUp(); initScrollTop(); initSidebarToc();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();

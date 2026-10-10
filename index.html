@@ -1,5 +1,5 @@
-﻿<!doctype html>
-<html lang="en" data-theme="dark">
+<!doctype html>
+<html lang="en" data-theme="light">
 
 <head>
   <meta charset="utf-8">
@@ -41,14 +41,15 @@
     <div class="nav-in">
       <a class="mark" href="#top" aria-label="Shape-Bayes, back to top"><svg class="logo" viewBox="0 0 32 32"
           aria-hidden="true">
-          <ellipse class="l-lik" cx="12.5" cy="16" rx="10.5" ry="4" transform="rotate(-55 12.5 16)" />
-          <ellipse class="l-pri" cx="19.5" cy="16" rx="10.5" ry="4" transform="rotate(55 19.5 16)" />
-          <ellipse class="l-post" cx="16" cy="12.7" rx="3.34" ry="4.33" />
+          <ellipse class="l-lik" cx="12.5" cy="16" rx="10.5" ry="4" transform="rotate(55 12.5 16)" />
+          <ellipse class="l-pri" cx="19.5" cy="16" rx="10.5" ry="4" transform="rotate(-55 19.5 16)" />
+          <ellipse class="l-post" cx="16" cy="19.3" rx="3.34" ry="4.33" />
         </svg><span>Shape-<em>Bayes</em></span></a>
       <nav class="nav-links" aria-label="Sections">
+        <a href="#motivation">Motivation</a>
         <a href="#problem">Problem</a>
         <a href="#idea">Idea</a>
-        <a href="#sampling">Sampling</a>
+        <a href="#live">Insight</a>
         <a href="#method">Method</a>
         <a href="#results">Results</a>
         <a href="#calibration">Calibration</a>
@@ -66,11 +67,26 @@
     </div>
   </header>
 
-  <main id="top">
+  <div class="page-layout">
+    <!-- ================= SIDEBAR TOC (wide screens only) ================= -->
+    <aside class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+      <nav>
+        <a href="#motivation">Motivation</a>
+        <a href="#problem">Problem</a>
+        <a href="#idea">Idea</a>
+        <a href="#live">Insight</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#calibration">Calibration</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#citation">Cite</a>
+      </nav>
+    </aside>
+
+    <main id="top">
 
     <!-- ================= HERO ================= -->
     <section class="hero wrap">
-      <div class="eyebrow">Preprint · 2026</div>
       <h1>Shape-<em>Bayes</em></h1>
       <p class="subtitle">Bayesian Inference of Structured Shapes under Visual Ambiguity</p>
       <div>
@@ -124,9 +140,8 @@
 
     <div class="wrap">
       <div class="thesis">
-        <blockquote>Trust visual evidence where it is <span class="c-lik">reliable</span>. Rely on the shape prior where
-          it is <span class="c-pri">ambiguous</span>.</blockquote>
         <cite>The core intuition of Shape-Bayes</cite>
+        <blockquote>Trust visual evidence where it is <span class="c-lik">reliable</span>. Rely on the shape prior where it is <span class="c-pri">ambiguous</span>.</blockquote>
       </div>
     </div>
 
@@ -169,10 +184,10 @@
           </div>
         </div>
         <figcaption><span class="fig-n">Fig. 1</span><b>Point estimate versus posterior under occlusion.</b> <span
-            class="c-gold">Gold</span>: the prediction of <abbr
+            class="c-gold"><span class="swatch" style="background:#d4a017"></span>Gold</span>: the prediction of <abbr
             title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>,
           a state-of-the-art deterministic model, which distorts when the face is hidden. <span
-            class="c-post">Cyan</span>: the Shape-Bayes posterior — a distribution of plausible face shapes. The
+            class="c-post"><span class="swatch" style="background:var(--post)"></span>Cyan</span>: the Shape-Bayes posterior — a distribution of plausible face shapes. The
           animation sweeps through the model's uncertainty, showing that only the hidden landmarks move. Ellipses
           indicate where the model is most uncertain. AI-generated faces.</figcaption>
       </figure>
@@ -223,15 +238,40 @@
       </div>
     </div>
 
+    <!-- ================= MOTIVATION ================= -->
+    <section class="sec mt-l" id="motivation">
+      <div class="wrap">
+        <div class="sec-head measure">
+          <div class="eyebrow">Motivation</div>
+          <h2>Bayesian Inference in Human Vision</h2>
+        </div>
+        <div class="measure prose">
+          <p>Perceiving complex, articulated shapes is an inherently ambiguous task, particularly when visual
+            features are occluded. Cognitive science has long posited that human vision resolves visual ambiguity
+            through <strong>Bayesian inference</strong> (Kersten et&nbsp;al., 2004; Mamassian, 2006): the visual
+            system continuously reconciles incomplete, noisy bottom-up observations with robust top-down structural
+            priors.</p>
+          <p>Classic computer vision formalized these probabilistic foundations for shape inference
+            (Mio et&nbsp;al., 2004; Feldman &amp; Singh, 2006), principles that have recently seen a resurgence in
+            3D generative modeling (Xu et&nbsp;al., 2024). In contrast, modern shape regression has largely shifted
+            away from these Bayesian origins in favour of deterministic point-estimate paradigms.</p>
+          <p>Shape-Bayes makes this connection explicit: like the human visual system, it <em>trusts</em> sharp
+            bottom-up observations where they are reliable and <em>relies</em> on a learned structural prior where
+            the evidence is ambiguous. This adaptive arbitration is implemented through a closed-form Bayesian update
+            that continuously weights visual evidence against geometric priors.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= PROBLEM ================= -->
-    <section class="sec mt-l" id="problem">
+    <section class="sec" id="problem">
       <div class="wrap">
         <div class="sec-head measure">
           <div class="eyebrow">The problem</div>
           <h2>Structural Collapse Under Severe Occlusion</h2>
         </div>
         <div class="measure prose">
-          <p>Deep regressors are highly accurate on unoccluded faces. But when a region has no meaningful visual
+          <p>Deep shape regressors are highly accurate on unoccluded faces. But when a region has no meaningful visual
             evidence, a model that must output one point per landmark still has to guess. It either draws a
             topologically invalid shape or falls back to a generic average. Even <abbr
               title="&quot;Heatmap Regression without Soft-Argmax for Facial Landmark Detection&quot; (ICCV\'25)">HR-noSA</abbr>,
@@ -1112,6 +1152,7 @@
     </section>
 
   </main>
+</div>
 
   <footer class="wrap">
     <div class="full">
@@ -1131,6 +1172,13 @@
     </button>
     <img alt="">
   </dialog>
+
+  <!-- Scroll-to-top button -->
+  <button class="scroll-top" id="scroll-top" aria-label="Scroll to top" title="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+  </button>
 
 </body>
 
