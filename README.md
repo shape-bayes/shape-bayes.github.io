@@ -26,9 +26,9 @@ The site is live at `https://shape-bayes.github.io/` within a minute or two. `.n
 
 ## Before publishing
 
-- [ ] Replace `XXXX.XXXXX` with the arXiv identifier, in `index.html` in two places: the arXiv button and the BibTeX entry.
-- [ ] When the code is public, set the Code button's `href` and remove its `aria-disabled="true"` attribute.
-- [ ] Check the BibTeX key and year.
+- [x] Add the published arXiv identifier in both the arXiv button and the BibTeX entry.
+- [x] Set the Code button's `href` and remove the disabled state once the project is public.
+- [x] Check the BibTeX key and year.
 
 ## Layout
 
